@@ -1,6 +1,6 @@
 === CSV Importer ===
-Contributors: dvkob
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=4YJEU5U2Y4LTS&lc=US&item_name=Support%20CSV%20Importer%20development&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted
+Contributors: dvkob, bheadrick
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RN6G3EE7DE7LU
 Tags: csv, import, batch, spreadsheet, excel
 Requires at least: 2.0.2
 Tested up to: 3.2.1
