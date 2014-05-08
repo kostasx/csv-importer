@@ -364,6 +364,12 @@ the post&#8217;s featured image.</p>
         // CREATE
         $id = wp_insert_post( $new_post );
 
+        if ( $id == 0 ){
+            $this->log['error'][] = "There was an error trying to create post with title" . convert_chars($data['csv_post_title']);
+        } else {
+            $this->log['notice'][] = "<b>Post with title " . convert_chars($data['csv_post_title']) . " created.</b>";
+        }
+
         if ( 'page' !== $type && !$id ) {
             // REMOVE NEW CATEGORIES ON FAILURE
             foreach ( $cats['cleanup'] as $c ) {
