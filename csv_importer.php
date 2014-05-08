@@ -232,18 +232,22 @@ the post&#8217;s featured image.</p>
             return;
         }
 
-    /* Version: 0.3.9
-     if (!current_user_can('publish_pages') || !current_user_can('publish_posts')) {        
-        $this->log['error'][] = 'You don\'t have the permissions to publish posts and pages. Please contact the blog\'s administrator.';        
-        $this->print_messages();        
-        return;         
-     } 
-     */
+        /* Version: 0.3.9
+         if (!current_user_can('publish_pages') || !current_user_can('publish_posts')) {        
+            $this->log['error'][] = 'You don\'t have the permissions to publish posts and pages. Please contact the blog\'s administrator.';        
+            $this->print_messages();        
+            return;         
+         } 
+         */
 
         require_once 'File_CSV_DataSource/DataSource.php';
 
         $time_start = microtime(true);
         $csv = new File_CSV_DataSource;
+
+        $csv->settings['delimiter'] = ';';
+        $csv->settings['eol']       = '\n';
+
         $file = $_FILES['csv_import']['tmp_name'];
         $this->stripBOM($file);
 
@@ -268,14 +272,12 @@ the post&#8217;s featured image.</p>
         $imported = 0;
         $comments = 0;
         
-        foreach ($csv->connect() as $csv_data) {
-        
-            if ($post_id = $this->create_post($csv_data, $options)) {
+        foreach ( $csv->connect() as $csv_data ) {
+            if ( $post_id = $this->create_post($csv_data, $options )) {
                 $imported++;
-                $comments += $this->add_comments($post_id, $csv_data);
-                $this->create_custom_fields($post_id, $csv_data);
-                // Version: 0.3.9
-                $this->add_attachments($post_id,$csv_data);
+                $comments += $this->add_comments( $post_id, $csv_data );
+                             $this->create_custom_fields( $post_id, $csv_data );
+                             $this->add_attachments( $post_id, $csv_data ); // @since 0.3.9
             } else {
                 $skipped++;
             }
@@ -349,28 +351,63 @@ the post&#8217;s featured image.</p>
         return $id;
     }
 
-/**
- * Return id of first image that matches the passed filename
- * @param string $filename csv_post_image cell contents
- * @since 0.3.9
- * 
- */
-function get_image_id($filename){
-    //try searching titles first
-    $filename =  preg_replace('/\.[^.]*$/', '', $filename);
-     $filename = strtolower(str_replace(' ','-',$filename));
-     $args = array('post_type' => 'attachment','name'=>$filename,'post_status'=>'publish');
-    $results = get_posts($args);
-    //$results = get_page_by_title($filename, ARRAY_A, 'attachment');
-    if(count($results==0)) return;
-     if(count($results)==1) return $results[0]->ID;
-    elseif(count($results)>1) {
-        foreach($results as $result){
-        if(strpos($result->guid,$filename))
-                return $result->ID;
+    /**
+     * Return id of first image that matches the passed filename
+     * @param string $filename csv_post_image cell contents
+     * @since 0.3.9
+     * 
+     */
+    function get_image_id($filename){
+        //try searching titles first
+        $filename =  preg_replace('/\.[^.]*$/', '', $filename);
+         $filename = strtolower(str_replace(' ','-',$filename));
+         $args = array('post_type' => 'attachment','name'=>$filename,'post_status'=>'publish');
+        $results = get_posts($args);
+        //$results = get_page_by_title($filename, ARRAY_A, 'attachment');
+        if(count($results==0)) return;
+         if(count($results)==1) return $results[0]->ID;
+        elseif(count($results)>1) {
+            foreach($results as $result){
+            if(strpos($result->guid,$filename))
+                    return $result->ID;
+            }
         }
     }
-}
+
+    /**
+     * Return ...
+     *
+     * @param 
+     * @param 
+     * @param 
+     * @return 
+     * @since 0.3.10
+     */
+    function get_ID_by_keyvalue ( $csv_key, $csv_value ){
+            // $prefix_mo_year = date('Y/m/');
+            // $value = $prefix_mo_year.$csv_value;
+
+            $value = $csv_value;
+            $args = array(
+                'post_type' => 'attachment',
+                'post_status' => 'inherit',
+                'meta_key' => $csv_key,
+                'meta_value' => $value );
+            // Query to Search for Attachment ID based on file name
+            $the_query = new WP_Query( $args );
+            // Get Us the Name
+            if ( $the_query->have_posts() ) {
+                while ( $the_query->have_posts() ) {
+                    $the_query->the_post();
+                    $imageID = $the_query->post->ID;
+                }
+            } else {
+                // no posts found
+            }
+            /* Restore original Post Data */
+            wp_reset_postdata();
+            return $imageID;
+    }
 
     /**
      * Return an array of category ids for a post.
@@ -697,31 +734,63 @@ function download_attachment($url, $post_id, $desc){
         return $count;
     }
 
-    function create_custom_fields($post_id, $data) {
-        foreach ($data as $k => $v) {
-            // anything that doesn't start with csv_ is a custom field
-            if (!preg_match('/^csv_/', $k) && $v != '') {
+    /**
+     * @param 
+     * @return 
+     */
+     function create_custom_fields( $post_id, $data ) {
+        foreach ( $data as $k => $v ) {
+            // ANYTHING THAT DOESN'T START WITH csv_ IS A CUSTOM FIELD
+            if ( !preg_match('/^csv_/', $k ) && $v != '') {
 
-            /***** Added: 0.3.9 *****/
-            // if value is serialized unserialize it
-            if( is_serialized($v) ) {
-                $v = unserialize($v);
-                // the unserialized array will be re-serialized with add_post_meta()
-            }elseif(strpos($v,'::')){
-                // import data and serialize it formatted as
-                // key::value[]key::value
-                $array = explode("[]",$v);
-                
-                foreach ($array as $lineNum => $line)
-                {
-                    list($key, $value) = explode("::", $line);
-                    $newArray[$key] = $value;
+                if ( $k == '_wp_attached_file' ){
+
+                    $imageID = $this->get_ID_by_keyvalue('_wp_attached_file', $v);
+                    $my_post = array(
+                        'ID'            => $imageID,
+                        'post_parent'   => $post_id
+                    );
+                    wp_update_post( $my_post );
+                    add_post_meta($imageID, '_wp_attachment_image_alt', trim($data['csv_post_title']).' '.trim($data['csv_post_excerpt']));
+                    add_post_meta($post_id, '_thumbnail_id', $imageID);
+                    //$this->log['notice'][] = "<b>Value is: {$v} for {$k}</b>";
+
+                } elseif ( $k == '_wp_attached_files' ) {
+
+                    $image_names = explode(", ", $v);
+                    foreach ($image_names as $image_name){
+                        $this->log['notice'][] = "<b>Trying to add {$image_name} as an attached image.</b>";
+                        $imageID = $this->get_ID_by_keyvalue( '_wp_attached_file', $image_name );
+                        $my_post = array(
+                        'ID'            => $imageID,
+                        'post_parent'   => $post_id
+                        );
+                        wp_update_post( $my_post );
+                    }
+
+                } else {
+
+                    /***** Added: 0.3.9 *****/
+                    // if value is serialized unserialize it
+                    if ( is_serialized($v) ) {
+                        $v = unserialize($v);
+                        // unserialized array will be re-serialized with add_post_meta()
+                    } elseif ( strpos($v,'::') ) {
+                        // import data and serialize it formatted as: key::value[]key::value
+                        $array = explode("[]",$v);
+                        foreach ($array as $lineNum => $line)
+                        {
+                            list( $key, $value ) = explode( "::", $line );
+                            $newArray[$key] = $value;
+                        }
+                        $v = $newArray;
+                    }
+                    /***** EoF *****/
+
+                    add_post_meta( $post_id, $k, $v );
+
                 }
-                $v = $newArray;
-            }
-            /***** EoF *****/
 
-            add_post_meta($post_id, $k, $v);
             }
         }
         
@@ -740,9 +809,9 @@ function download_attachment($url, $post_id, $desc){
         } 
         */
 
-        // Added: 0.3.9
+        // @since 0.3.9
         $author_data = get_user_by('login', $author);
-        return ($author_data) ? $author_data->ID : 0;
+        return ( $author_data ) ? $author_data->ID : 0;
     }
 
     /**
@@ -796,10 +865,7 @@ function download_attachment($url, $post_id, $desc){
 function csv_admin_menu() {
     require_once ABSPATH . '/wp-admin/admin.php';
     $plugin = new CSVImporterPlugin;
-    add_management_page('edit.php', 'CSV Importer', 'manage_options', __FILE__,
-        array($plugin, 'form'));
+    add_management_page('edit.php', 'CSV Importer', 'manage_options', __FILE__, array($plugin, 'form') );
 }
 
 add_action('admin_menu', 'csv_admin_menu');
-
-?>

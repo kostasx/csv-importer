@@ -118,6 +118,15 @@ name. The data in that column will be imported as the custom fields value.
 *   `csv_post_slug` - post slug used in permalinks.
 *   `csv_post_parent` - post parent id.
 
+#### Attaching Pictures to Posts / Pages
+
+Attach a featured image to a post and/or multiple images.
+
+*   `_wp_attached_file` - To upload a featured image, make sure your theme supports this feature, then use the column heading: _wp_attached_file - the cell value should be the full file name such as example.jpg or example2.gif
+*   `_wp_attached_files` - To upload multiple images to a post for use in a gallery or just to have them all attached use the heading: _wp_attached_files - the cell value should be a comma separated list of full file names such as example.jpg, example2.jpeg, example3.gif, example4.png
+
+**BEFORE YOU UPLOAD THE CSV**, YOU MUST UPLOAD THE IMAGES TO THE WORDPRESS MEDIA GALLERY FIRST. This is because we just find the image from it's name in the wordpress database and properly attach it to the post you are creating from the csv upload.
+
 ### Custom taxonomies 
 
 __New in version 0.3.0__
@@ -247,12 +256,18 @@ Contributors:
 *   Frank Loeffler (comments support)
 *   Micah Gates (subcategory syntax)
 *   David Hollander (deprecation warnings, linebreak handling)
+*   dfenton [(Attaching Pictures to Posts / Pages Uploaded by CSV)][6]
+*   KostasX 
 
 [3]: http://code.google.com/p/php-csv-parser/
 [4]: http://www.jayblogger.com/the-birth-of-my-first-plugin-import-csv/
-
+[6]: http://wordpress.org/support/topic/attaching-pictures-to-posts-pages-uploaded-by-csv
 
 ## Changelog 
+
+= 0.3.9 =
+
+= 0.3.8 =
 
 = 0.3.7 =
 *   Make hierarchical custom taxonomy line splitting more robust
