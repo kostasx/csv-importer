@@ -185,6 +185,12 @@ matters_. The first column contains the name of the parent term and the second<b
 column contains the name of the child term. Top level terms have to be preceded<br />
 either by an empty string or a 0 (zero). (precede each value with a comma).</p>
 
+<h2>Featured Image</h2>
+<p>You can attach an already uploaded image by using the '_csv_attached_file' CSV field.<br />
+See example.csv.</p> 
+   
+</p>
+
 <h2>Attachments</h2>
 <p>You can now add attachments by uploading the files via ftp and then including<br />
 the full URL to the attachment file including images, documents or any other file type<br />
