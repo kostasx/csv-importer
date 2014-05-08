@@ -1,5 +1,5 @@
 === CSV Importer ===
-Contributors: dvkob, bheadrick
+Contributors: dvkob, bheadrick, kostasx
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RN6G3EE7DE7LU
 Tags: csv, import, batch, spreadsheet, excel
 Requires at least: 2.0.2
