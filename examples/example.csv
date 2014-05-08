@@ -1,2 +1,2 @@
-"csv_post_title";"csv_post_post";"csv_post_categories";"csv_post_date";"csv_post_author";"csv_post_slug";"csv_post_type";"csv_post_parent";"_wp_attached_file"
+"csv_post_title";"csv_post_post";"csv_post_categories";"csv_post_date";"csv_post_author";"csv_post_slug";"csv_post_type";"csv_post_parent";"_csv_attached_file"
 "My Post Title";"My Awesome Post Content<br>goes here";"category_slug";;;;"post_type";;"featured_image.jpg"

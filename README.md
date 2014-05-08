@@ -25,7 +25,7 @@ a CSV file and the plugin will take care of the rest.
 
 ### Features 
 
-*   Imports post title, body, excerpt, tags, date, categories etc.
+*   Imports post title, body, excerpt, tags, date, categories, featured image etc.
 *   Supports custom fields, custom taxonomies and comments
 *   Deals with Word-style quotes and other non-standard characters using
     WordPress' built-in mechanism (same one that normalizes your input when you
@@ -122,8 +122,8 @@ name. The data in that column will be imported as the custom fields value.
 
 Attach a featured image to a post and/or multiple images.
 
-*   `_wp_attached_file` - To upload a featured image, make sure your theme supports this feature, then use the column heading: _wp_attached_file - the cell value should be the full file name such as example.jpg or example2.gif
-*   `_wp_attached_files` - To upload multiple images to a post for use in a gallery or just to have them all attached use the heading: _wp_attached_files - the cell value should be a comma separated list of full file names such as example.jpg, example2.jpeg, example3.gif, example4.png
+*   `_csv_attached_file` - To upload a featured image, make sure your theme supports this feature, then use the column heading: _wp_attached_file - the cell value should be the full file name such as example.jpg or example2.gif
+*   `_csv_attached_files` - To upload multiple images to a post for use in a gallery or just to have them all attached use the heading: _wp_attached_files - the cell value should be a comma separated list of full file names such as example.jpg, example2.jpeg, example3.gif, example4.png
 
 **BEFORE YOU UPLOAD THE CSV**, YOU MUST UPLOAD THE IMAGES TO THE WORDPRESS MEDIA GALLERY FIRST. This is because we just find the image from it's name in the wordpress database and properly attach it to the post you are creating from the csv upload.
 
@@ -257,13 +257,17 @@ Contributors:
 *   Micah Gates (subcategory syntax)
 *   David Hollander (deprecation warnings, linebreak handling)
 *   dfenton [(Attaching Pictures to Posts / Pages Uploaded by CSV)][6]
-*   KostasX 
+*   KostasX (enhancements)
 
 [3]: http://code.google.com/p/php-csv-parser/
 [4]: http://www.jayblogger.com/the-birth-of-my-first-plugin-import-csv/
 [6]: http://wordpress.org/support/topic/attaching-pictures-to-posts-pages-uploaded-by-csv
 
 ## Changelog 
+
+= 0.3.10 =
+
+* Import featured image
 
 = 0.3.9 =
 

@@ -2,7 +2,7 @@
 /*
 Plugin Name: CSV Importer
 Description: Import data as posts from a CSV file. <em>You can reach the author at <a href="mailto:d.v.kobozev@gmail.com">d.v.kobozev@gmail.com</a></em>.
-Version: 0.3.9
+Version: 0.3.10
 Author: Denis Kobozev, Bryan Headrick, KostasX
 */
 /**
@@ -245,8 +245,8 @@ the post&#8217;s featured image.</p>
      * @param array $options
      * @return void
      */
-    function post($options) {
-        if (empty($_FILES['csv_import']['tmp_name'])) {
+    function post( $options ) {
+        if ( empty( $_FILES['csv_import']['tmp_name']) ) {
             $this->log['error'][] = 'No file uploaded, aborting.';
             $this->print_messages();
             return;
@@ -345,7 +345,7 @@ the post&#8217;s featured image.</p>
         );
 
         // PAGES DON'T HAVE TAGS OR CATEGORIES
-        if ('page' !== $type) {
+        if ( 'page' !== $type ) {
             $new_post['tags_input'] = $data['csv_post_tags'];
 
             // Setup categories before inserting - this should make insertion
@@ -756,24 +756,34 @@ the post&#8217;s featured image.</p>
             // ANYTHING THAT DOESN'T START WITH csv_ IS A CUSTOM FIELD
             if ( !preg_match('/^csv_/', $k ) && $v != '') {
 
-                if ( $k == '_wp_attached_file' ){
+                if ( $k == '_csv_attached_file' ){
 
-                    $imageID = $this->get_ID_by_keyvalue('_wp_attached_file', $v);
+                    $imageID = $this->get_ID_by_keyvalue( '_wp_attached_file', $v );
+
+                    if ( count($imageID) == 0 ){
+                        $this->log['error'][] = "<b>Could not attach image <strong>{$v}</strong>. Maybe it isn't uploaded?</b>";
+                    }
+
                     $my_post = array(
                         'ID'            => $imageID,
                         'post_parent'   => $post_id
                     );
                     wp_update_post( $my_post );
-                    add_post_meta( $imageID, '_wp_attachment_image_alt', trim($data['csv_post_title']).' '.trim($data['csv_post_excerpt']));
+                    add_post_meta( $imageID, '_csv_attachment_image_alt', trim($data['csv_post_title']).' '.trim($data['csv_post_excerpt']));
                     add_post_meta( $post_id, '_thumbnail_id', $imageID );
                     //$this->log['notice'][] = "<b>Value is: {$v} for {$k}</b>";
 
-                } elseif ( $k == '_wp_attached_files' ) {
+                } elseif ( $k == '_csv_attached_files' ) {
 
                     $image_names = explode(", ", $v);
                     foreach ($image_names as $image_name){
                         $this->log['notice'][] = "<b>Trying to add {$image_name} as an attached image.</b>";
                         $imageID = $this->get_ID_by_keyvalue( '_wp_attached_file', $image_name );
+
+                        if ( count($imageID) == 0 ){
+                            $this->log['error'][] = "<b>Could not attach image <strong>{$image_name}</strong>. Maybe it isn't uploaded?</b>";
+                        }
+
                         $my_post = array(
                         'ID'            => $imageID,
                         'post_parent'   => $post_id
