@@ -35,6 +35,7 @@ Author: Denis Kobozev, Bryan Headrick, KostasX
  */
 
 class CSVImporterPlugin {
+
     var $defaults = array(
         'csv_post_title'      => null,
         'csv_post_post'       => null,
@@ -46,10 +47,30 @@ class CSVImporterPlugin {
         'csv_post_author'     => null,
         'csv_post_slug'       => null,
         'csv_post_parent'     => 0,
-        
     );
 
     var $log = array();
+
+    function __construct(){
+        add_action( 'admin_menu', array( $this, 'csv_admin_menu') );
+        add_action( 'admin_init', array( $this, 'csv_register_settings' ) );
+    }
+
+
+    function csv_admin_menu() {
+        require_once ABSPATH . '/wp-admin/admin.php';
+        add_management_page( 'edit.php', 'CSV Importer', 'manage_options', __FILE__, array( $this, 'form' ) );
+    }
+
+    function csv_register_settings() {
+
+        add_option( 'csv_importer_plugin_delimiter', ';' );
+        add_option( 'csv_importer_plugin_eol', '\n' );
+
+        register_setting( 'default', 'csv_importer_plugin_delimiter' ); 
+        register_setting( 'default', 'csv_importer_plugin_eol' ); 
+
+    } 
 
     /**
      * Determine value of option $name from database, $default value or $params,
@@ -123,18 +144,26 @@ class CSVImporterPlugin {
         <p class="submit"><input type="submit" class="button" name="submit" value="Import" /></p>
     </form>
     <h2>Standard Fields</h2>
- <ul>
-	<li><strong>csv_post_title</strong></li>
-	<li>csv_post_post</li>
-	<li>csv_post_type</li>
-	<li>csv_post_excerpt</li>
-	<li>csv_post_date</li>
-	<li>csv_post_tags</li>
-	<li>csv_post_categories</li>
-	<li>csv_post_author</li>
-	<li>csv_post_slug</li>
-	<li>csv_post_parent</li>
-</ul>
+	<strong>csv_post_title</strong> | csv_post_post | csv_post_type | csv_post_excerpt | csv_post_date | csv_post_tags | csv_post_categories | csv_post_author | csv_post_slug | csv_post_parent
+
+    <div class="wrap">
+        <?php screen_icon(); ?>
+        <h2>Settings</h2>
+        <form method="post" action="options.php"> 
+            <?php settings_fields( 'default' ); ?>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row"><label for="csv_importer_plugin_delimiter">CSV Delimiter</label></th>
+                        <td><input type="text" id="csv_importer_plugin_delimiter" name="csv_importer_plugin_delimiter" value="<?php echo get_option('csv_importer_plugin_delimiter'); ?>" /></td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row"><label for="csv_importer_plugin_eol">CSV End of Line</label></th>
+                        <td><input type="text" id="csv_importer_plugin_eol" name="csv_importer_plugin_eol" value="<?php echo get_option('csv_importer_plugin_eol'); ?>" /></td>
+                    </tr>
+                </table>
+            <?php submit_button(); ?>
+        </form>
+    </div>
 
 <!-- Parent category -->      
 <!--
@@ -188,27 +217,18 @@ the post&#8217;s featured image.</p>
 
 <div class="wrap">
     <?php if (!empty($this->log['error'])): ?>
-
     <div class="error">
-
         <?php foreach ($this->log['error'] as $error): ?>
             <p><?php echo $error; ?></p>
         <?php endforeach; ?>
-
     </div>
-
     <?php endif; ?>
-
     <?php if (!empty($this->log['notice'])): ?>
-
     <div class="updated fade">
-
         <?php foreach ($this->log['notice'] as $notice): ?>
             <p><?php echo $notice; ?></p>
         <?php endforeach; ?>
-
     </div>
-
     <?php endif; ?>
 </div><!-- end wrap -->
 
@@ -243,10 +263,10 @@ the post&#8217;s featured image.</p>
         require_once 'File_CSV_DataSource/DataSource.php';
 
         $time_start = microtime(true);
-        $csv = new File_CSV_DataSource;
 
-        $csv->settings['delimiter'] = ';';
-        $csv->settings['eol']       = '\n';
+        $csv = new File_CSV_DataSource;
+        $csv->settings['delimiter'] = get_option('csv_importer_plugin_delimiter', ';' );
+        $csv->settings['eol']       = get_option('csv_importer_plugin_eol', '\n' );
 
         $file = $_FILES['csv_import']['tmp_name'];
         $this->stripBOM($file);
@@ -257,23 +277,22 @@ the post&#8217;s featured image.</p>
             return;
         }
 
-        // pad shorter rows with empty values
+        // PAD SHORTER ROWS WITH EMPTY VALUES
         $csv->symmetrize();
 
-        // WordPress sets the correct timezone for date functions somewhere
-        // in the bowels of wp_insert_post(). We need strtotime() to return
-        // correct time before the call to wp_insert_post().
+        // WordPress sets the correct timezone for date functions somewhere in the bowels of wp_insert_post().
+        // We need strtotime() to return correct time before the call to wp_insert_post().
         $tz = get_option('timezone_string');
         if ($tz && function_exists('date_default_timezone_set')) {
             date_default_timezone_set($tz);
         }
 
-        $skipped = 0;
+        $skipped  = 0;
         $imported = 0;
         $comments = 0;
         
         foreach ( $csv->connect() as $csv_data ) {
-            if ( $post_id = $this->create_post($csv_data, $options )) {
+            if ( $post_id = $this->create_post( $csv_data, $options )) {
                 $imported++;
                 $comments += $this->add_comments( $post_id, $csv_data );
                              $this->create_custom_fields( $post_id, $csv_data );
@@ -296,17 +315,16 @@ the post&#8217;s featured image.</p>
         $this->print_messages();
     }
 
-    function create_post($data, $options) {
+    function create_post( $data, $options ) {
         /* Version: 0.3.8
         $opt_draft = isset($options['opt_draft']) ? $options['opt_draft'] : null;   
         $opt_cat = isset($options['opt_cat']) ? $options['opt_cat'] : null; 
         */
-        extract($options);
+        extract( $options );
 
-        $data = array_merge($this->defaults, $data);
+        $data = array_merge( $this->defaults, $data );
         $type = $data['csv_post_type'] ? $data['csv_post_type'] : 'post';
-        $valid_type = (function_exists('post_type_exists') &&
-            post_type_exists($type)) || in_array($type, array('post', 'page'));
+        $valid_type = (function_exists('post_type_exists') && post_type_exists($type)) || in_array($type, array('post', 'page'));
 
         if (!$valid_type) {
             $this->log['error']["type-{$type}"] = sprintf(
@@ -324,28 +342,26 @@ the post&#8217;s featured image.</p>
             'post_author'  => $this->get_auth_id($data['csv_post_author']),
             'tax_input'    => $this->get_taxonomies($data),
             'post_parent'  => $data['csv_post_parent'],
-            
         );
 
-        // pages don't have tags or categories
+        // PAGES DON'T HAVE TAGS OR CATEGORIES
         if ('page' !== $type) {
             $new_post['tags_input'] = $data['csv_post_tags'];
 
             // Setup categories before inserting - this should make insertion
             // faster, but I don't exactly remember why :) Most likely because
-            // we don't assign default cat to post when csv_post_categories
-            // is not empty.
+            // we don't assign default cat to post when csv_post_categories is not empty.
             $cats = $this->create_or_get_categories($data, $opt_cat);
             $new_post['post_category'] = $cats['post'];
         }
 
-        // create!
-        $id = wp_insert_post($new_post);
+        // CREATE
+        $id = wp_insert_post( $new_post );
 
-        if ('page' !== $type && !$id) {
-            // cleanup new categories on failure
-            foreach ($cats['cleanup'] as $c) {
-                wp_delete_term($c, 'category');
+        if ( 'page' !== $type && !$id ) {
+            // REMOVE NEW CATEGORIES ON FAILURE
+            foreach ( $cats['cleanup'] as $c ) {
+                wp_delete_term( $c, 'category' );
             }
         }
         return $id;
@@ -357,56 +373,53 @@ the post&#8217;s featured image.</p>
      * @since 0.3.9
      * 
      */
-    function get_image_id($filename){
-        //try searching titles first
-        $filename =  preg_replace('/\.[^.]*$/', '', $filename);
-         $filename = strtolower(str_replace(' ','-',$filename));
-         $args = array('post_type' => 'attachment','name'=>$filename,'post_status'=>'publish');
-        $results = get_posts($args);
-        //$results = get_page_by_title($filename, ARRAY_A, 'attachment');
-        if(count($results==0)) return;
-         if(count($results)==1) return $results[0]->ID;
-        elseif(count($results)>1) {
-            foreach($results as $result){
-            if(strpos($result->guid,$filename))
+    function get_image_id( $filename ){
+        // try searching titles first
+        $filename = preg_replace( '/\.[^.]*$/', '', $filename );
+        $filename = strtolower( str_replace(' ','-',$filename ));
+        $args     = array( 'post_type' => 'attachment','name' => $filename, 'post_status' => 'publish' );
+        $results  = get_posts( $args );
+        // $results = get_page_by_title($filename, ARRAY_A, 'attachment');
+        if( count( $results == 0 )) return;
+        if( count( $results) == 1 ) return $results[0]->ID;
+        elseif( count( $results ) > 1 ) {
+            foreach( $results as $result ){
+            if ( strpos( $result->guid, $filename ) )
                     return $result->ID;
             }
         }
     }
 
     /**
-     * Return ...
+     * Return attachment ID based in filename
      *
-     * @param 
-     * @param 
-     * @param 
-     * @return 
+     * @param string
+     * @param string
+     * @return string
      * @since 0.3.10
      */
-    function get_ID_by_keyvalue ( $csv_key, $csv_value ){
-            // $prefix_mo_year = date('Y/m/');
-            // $value = $prefix_mo_year.$csv_value;
-
-            $value = $csv_value;
-            $args = array(
-                'post_type' => 'attachment',
-                'post_status' => 'inherit',
-                'meta_key' => $csv_key,
-                'meta_value' => $value );
-            // Query to Search for Attachment ID based on file name
-            $the_query = new WP_Query( $args );
-            // Get Us the Name
-            if ( $the_query->have_posts() ) {
-                while ( $the_query->have_posts() ) {
-                    $the_query->the_post();
-                    $imageID = $the_query->post->ID;
-                }
-            } else {
-                // no posts found
+    function get_ID_by_keyvalue( $csv_key, $csv_value ){
+        // Used for month/year based media folders:
+        // $prefix_mo_year = date('Y/m/');
+        // $value = $prefix_mo_year.$csv_value;
+        $value = $csv_value;
+        $args = array(
+            'post_type'     => 'attachment',
+            'post_status'   => 'inherit',
+            'meta_key'      => $csv_key,
+            'meta_value'    => $value 
+        );
+        $the_query = new WP_Query( $args );
+        if ( $the_query->have_posts() ) {
+            while ( $the_query->have_posts() ) {
+                $the_query->the_post();
+                $imageID = $the_query->post->ID;
             }
-            /* Restore original Post Data */
-            wp_reset_postdata();
-            return $imageID;
+        } else {
+            // NO POSTS FOUND
+        }
+        wp_reset_postdata();
+        return $imageID;
     }
 
     /**
@@ -501,31 +514,32 @@ the post&#8217;s featured image.</p>
      * @param array $data
      * @return array
      */
-function add_attachments($post_id, $data){
-   // $this->log['notice'][]= 'adding attachments for id#'. $post_id;
-    $attachments = array();
-    foreach ($data as $k => $v) {
-            if (preg_match('/^csv_attachment_(.*)$/', $k, $matches)) {
-               // $this->log['notice'][] = 'Found this attachment: ' . $matches[1] . ' with this value:' . $data[$k];
-                $a_name = $matches[1];
-               
-                    $attachment[$a_name] = $data[$k];
+    function add_attachments( $post_id, $data ){
+       // $this->log['notice'][]= 'adding attachments for id#'. $post_id;
+        $attachments = array();
+        foreach ($data as $k => $v) {
+                if (preg_match('/^csv_attachment_(.*)$/', $k, $matches)) {
+                   // $this->log['notice'][] = 'Found this attachment: ' . $matches[1] . ' with this value:' . $data[$k];
+                    $a_name = $matches[1];
                    
-                    if(preg_match('|^http(s)?://[a-z0-9-]+(.[a-z0-9-]+)*(:[0-9]+)?(/.*)?$|i', $data[$k])) {
-                        $url = $v;
-                        $id = $this->download_attachment($data[$k],$post_id,$a_name);}
-                    if($a_name == 'thumbnail' && $id<>''){
-                        add_post_meta($post_id, '_thumbnail_id',$id);
-                    }
-            }
-            else if($k=='csv_post_image'){
-                $id = $this->get_image_id($v);
-                if($id<>'') add_post_meta($post_id, '_thumbnail_id',$this->get_image_id($v));
-            }
-        } 
-        return $attachments;
-}
-/**
+                        $attachment[$a_name] = $data[$k];
+                       
+                        if(preg_match('|^http(s)?://[a-z0-9-]+(.[a-z0-9-]+)*(:[0-9]+)?(/.*)?$|i', $data[$k])) {
+                            $url = $v;
+                            $id = $this->download_attachment($data[$k],$post_id,$a_name);}
+                        if($a_name == 'thumbnail' && $id<>''){
+                            add_post_meta($post_id, '_thumbnail_id',$id);
+                        }
+                }
+                else if($k=='csv_post_image'){
+                    $id = $this->get_image_id($v);
+                    if($id<>'') add_post_meta($post_id, '_thumbnail_id',$this->get_image_id($v));
+                }
+            } 
+            return $attachments;
+    }
+
+    /**
      * Download file from remote URL, save it to the Media Library, and return
      * the attachment id
      *
@@ -534,41 +548,40 @@ function add_attachments($post_id, $data){
      * @param string $desc
      * @return int
      */
-function download_attachment($url, $post_id, $desc){
-     set_time_limit(10);
-    $tmp = download_url( $url );
-	 if(strlen(trim($url))<5) return;
-	
-	// Set variables for storage
-	// fix file filename for query strings
-	//preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG|wav|mp3|pdf)/', $file, $matches);
-	 $file_array = array(
-        'name' => basename( $url ),
-        'tmp_name' => $tmp
-             );
+    function download_attachment($url, $post_id, $desc){
+        set_time_limit(10);
+        $tmp = download_url( $url );
+    	 if(strlen(trim($url))<5) return;
+    	
+    	// Set variables for storage
+    	// fix file filename for query strings
+    	//preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG|wav|mp3|pdf)/', $file, $matches);
+    	 $file_array = array(
+            'name' => basename( $url ),
+            'tmp_name' => $tmp
+                 );
 
+    	// If error storing temporarily, unlink
+    	if ( is_wp_error( $tmp ) ) {
+    		@unlink($file_array['tmp_name']);
+    		$file_array['tmp_name'] = '';
+    	}
 
-	// If error storing temporarily, unlink
-	if ( is_wp_error( $tmp ) ) {
-		@unlink($file_array['tmp_name']);
-		$file_array['tmp_name'] = '';
-	}
+    	// do the validation and storage stuff
+    	$id = media_handle_sideload( $file_array, $post_id, $desc );
+            
+    	// If error storing permanently, unlink
+    	if ( is_wp_error($id) ) {
+                 $this->log['error'][] = $id->get_error_message() .' : ' . $url;
+    		@unlink($file_array['tmp_name']);
+    		return $id;
+    	}
+             //$this->log['notice'][] = 'Downloaded the file. Here\'s the id: ' . $id;
 
-	// do the validation and storage stuff
-	$id = media_handle_sideload( $file_array, $post_id, $desc );
-        
-	// If error storing permanently, unlink
-	if ( is_wp_error($id) ) {
-             $this->log['error'][] = $id->get_error_message() .' : ' . $url;
-		@unlink($file_array['tmp_name']);
-		return $id;
-	}
-         //$this->log['notice'][] = 'Downloaded the file. Here\'s the id: ' . $id;
-
-	$src = wp_get_attachment_url( $id );
-         //$this->log['notice'][] = 'Saved the file successfully! Here\'s the path: ' . $src ;
-    return $id;
-}
+    	$src = wp_get_attachment_url( $id );
+             //$this->log['notice'][] = 'Saved the file successfully! Here\'s the path: ' . $src ;
+        return $id;
+    }
     /**
      * Return an array of term IDs for hierarchical taxonomies or the original
      * string from CSV for non-hierarchical taxonomies. The original string
@@ -578,7 +591,7 @@ function download_attachment($url, $post_id, $desc){
      * @param string $field
      * @return mixed
      */
-    function create_terms($taxonomy, $field) {
+    function create_terms( $taxonomy, $field ) {
         if (is_taxonomy_hierarchical($taxonomy)) {
             $term_ids = array();
             foreach ($this->_parse_tax($field) as $row) {
@@ -751,8 +764,8 @@ function download_attachment($url, $post_id, $desc){
                         'post_parent'   => $post_id
                     );
                     wp_update_post( $my_post );
-                    add_post_meta($imageID, '_wp_attachment_image_alt', trim($data['csv_post_title']).' '.trim($data['csv_post_excerpt']));
-                    add_post_meta($post_id, '_thumbnail_id', $imageID);
+                    add_post_meta( $imageID, '_wp_attachment_image_alt', trim($data['csv_post_title']).' '.trim($data['csv_post_excerpt']));
+                    add_post_meta( $post_id, '_thumbnail_id', $imageID );
                     //$this->log['notice'][] = "<b>Value is: {$v} for {$k}</b>";
 
                 } elseif ( $k == '_wp_attached_files' ) {
@@ -861,11 +874,4 @@ function download_attachment($url, $post_id, $desc){
     }
 }
 
-
-function csv_admin_menu() {
-    require_once ABSPATH . '/wp-admin/admin.php';
-    $plugin = new CSVImporterPlugin;
-    add_management_page('edit.php', 'CSV Importer', 'manage_options', __FILE__, array($plugin, 'form') );
-}
-
-add_action('admin_menu', 'csv_admin_menu');
+$csvImporterPlugin = new CSVImporterPlugin;
