@@ -3,7 +3,7 @@
 Plugin Name: CSV Importer
 Description: Import data as posts from a CSV file. <em>You can reach the author at <a href="mailto:d.v.kobozev@gmail.com">d.v.kobozev@gmail.com</a></em>.
 Version: 0.3.9
-Author: Denis Kobozev, Bryan Headrick
+Author: Denis Kobozev, Bryan Headrick, KostasX
 */
 /**
  * LICENSE: The MIT License {{{
@@ -134,10 +134,15 @@ class CSVImporterPlugin {
 	<li>csv_post_author</li>
 	<li>csv_post_slug</li>
 	<li>csv_post_parent</li>
-       
-	
 </ul>
-   <h2>== Custom taxonomies ==</h2>
+
+<!-- Parent category -->      
+<!--
+<p>Organize into category <?php wp_dropdown_categories(array('show_option_all' => 'Select one ...', 'hide_empty' => 0, 'hierarchical' => 1, 'show_count' => 0, 'name' => 'csv_importer_cat', 'orderby' => 'name', 'selected' => $opt_cat));?><br/>      
+<small>This will create new categories inside the category parent you choose.</small></p> 
+-->
+
+<h2>Custom taxonomies</h2>
 <p>Once custom taxonomies are set up in your theme&#8217;s functions.php file or</p>
 <p>by using a 3rd party plugin, `<strong>csv_ctax_(taxonomy name)</strong>` columns can be<br />
 used to assign imported data to the taxonomies.</p>
@@ -149,20 +154,22 @@ the same as the `csv_post_tags` syntax.</p>
 taxonomy field is a tiny two-column CSV file, where _the order of columns<br />
 matters_. The first column contains the name of the parent term and the second<br />
 column contains the name of the child term. Top level terms have to be preceded<br />
-either by an empty string or a 0 (zero). (precede each value with a comma)</p>
-<p>.</p>
-<h2>== Attachments ==</h2>
- <p>You can now add attachments by uploading the files via ftp and then including</p>
-<p>the full URL to the attachment file including images, documents or any other file type</p>
-<p>that WordPress supports. The format is <strong>csv_attachment_(attachment name)</strong>.</p>
-<p>Also, if the column name is csv_attachment_thumbnail, then the attachment will be set as</p>
-<p>the post&#8217;s featured image.</p>
-<h2>== Custom/Meta Fields</h2>
-All columns not beginning with <strong>csv_</strong> will be imported as postmeta
-<h2>== Serialized Data Support ==</h2>
+either by an empty string or a 0 (zero). (precede each value with a comma).</p>
+
+<h2>Attachments</h2>
+<p>You can now add attachments by uploading the files via ftp and then including<br />
+the full URL to the attachment file including images, documents or any other file type<br />
+that WordPress supports. The format is <strong>csv_attachment_(attachment name)</strong>.</p>
+<p>Also, if the column name is csv_attachment_thumbnail, then the attachment will be set as
+the post&#8217;s featured image.</p>
+
+<h2>Custom/Meta Fields</h2>
+<p>All columns not beginning with <strong>csv_</strong> will be imported as postmeta</p>
+
+<h2>Serialized Data Support</h2>
 <p>Now supports serializing data. Format meta field as follows:</p>
 <p><strong>    key::value </strong></p>
-<p>    or</p>
+<p>or</p>
 <p><strong>    key::value[]key::value</strong>...
     
 </p>
@@ -225,6 +232,14 @@ All columns not beginning with <strong>csv_</strong> will be imported as postmet
             return;
         }
 
+    /* Version: 0.3.9
+     if (!current_user_can('publish_pages') || !current_user_can('publish_posts')) {        
+        $this->log['error'][] = 'You don\'t have the permissions to publish posts and pages. Please contact the blog\'s administrator.';        
+        $this->print_messages();        
+        return;         
+     } 
+     */
+
         require_once 'File_CSV_DataSource/DataSource.php';
 
         $time_start = microtime(true);
@@ -259,6 +274,7 @@ All columns not beginning with <strong>csv_</strong> will be imported as postmet
                 $imported++;
                 $comments += $this->add_comments($post_id, $csv_data);
                 $this->create_custom_fields($post_id, $csv_data);
+                // Version: 0.3.9
                 $this->add_attachments($post_id,$csv_data);
             } else {
                 $skipped++;
@@ -279,6 +295,10 @@ All columns not beginning with <strong>csv_</strong> will be imported as postmet
     }
 
     function create_post($data, $options) {
+        /* Version: 0.3.8
+        $opt_draft = isset($options['opt_draft']) ? $options['opt_draft'] : null;   
+        $opt_cat = isset($options['opt_cat']) ? $options['opt_cat'] : null; 
+        */
         extract($options);
 
         $data = array_merge($this->defaults, $data);
@@ -328,11 +348,13 @@ All columns not beginning with <strong>csv_</strong> will be imported as postmet
         }
         return $id;
     }
-    /**
-     * Return id of first image that matches the passed filename
-     * @param string $filename csv_post_image cell contents
-     * 
-     */
+
+/**
+ * Return id of first image that matches the passed filename
+ * @param string $filename csv_post_image cell contents
+ * @since 0.3.9
+ * 
+ */
 function get_image_id($filename){
     //try searching titles first
     $filename =  preg_replace('/\.[^.]*$/', '', $filename);
@@ -348,9 +370,8 @@ function get_image_id($filename){
                 return $result->ID;
         }
     }
-    
-    
 }
+
     /**
      * Return an array of category ids for a post.
      *
@@ -437,6 +458,7 @@ function get_image_id($filename){
     }
      /**
      * Parse attachment data from the file
+     * @since 0.3.9
      *
      * @param int   $post_id
      * @param array $data
@@ -679,7 +701,9 @@ function download_attachment($url, $post_id, $desc){
         foreach ($data as $k => $v) {
             // anything that doesn't start with csv_ is a custom field
             if (!preg_match('/^csv_/', $k) && $v != '') {
-                 // if value is serialized unserialize it
+
+            /***** Added: 0.3.9 *****/
+            // if value is serialized unserialize it
             if( is_serialized($v) ) {
                 $v = unserialize($v);
                 // the unserialized array will be re-serialized with add_post_meta()
@@ -689,13 +713,15 @@ function download_attachment($url, $post_id, $desc){
                 $array = explode("[]",$v);
                 
                 foreach ($array as $lineNum => $line)
-{
-list($key, $value) = explode("::", $line);
-$newArray[$key] = $value;
-}
-$v = $newArray;
+                {
+                    list($key, $value) = explode("::", $line);
+                    $newArray[$key] = $value;
+                }
+                $v = $newArray;
             }
-                add_post_meta($post_id, $k, $v);
+            /***** EoF *****/
+
+            add_post_meta($post_id, $k, $v);
             }
         }
         
@@ -705,6 +731,16 @@ $v = $newArray;
         if (is_numeric($author)) {
             return $author;
         }
+        /* Removed: 0.3.9
+        // get_userdatabylogin is deprecated as of 3.3.0       
+        if (function_exists('get_user_by')) {       
+             $author_data = get_user_by('login', $author);       
+        } else {        
+             $author_data = get_userdatabylogin($author);        
+        } 
+        */
+
+        // Added: 0.3.9
         $author_data = get_user_by('login', $author);
         return ($author_data) ? $author_data->ID : 0;
     }
