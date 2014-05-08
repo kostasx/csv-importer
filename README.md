@@ -1,4 +1,4 @@
-=== CSV Importer ===
+## CSV Importer
 
 **Contributors:** dvkob, bheadrick, kostasx
 
@@ -12,14 +12,14 @@
 
 Import posts from CSV files into WordPress.
 
-== Description ==
+## Description
 
 This plugin imports posts from CSV (Comma Separated Value) files into your
 WordPress blog. It can prove extremely useful when you want to import a bunch
 of posts from an Excel document or the like - simply export your document into
 a CSV file and the plugin will take care of the rest.
 
-= Features =
+### Features 
 
 *   Imports post title, body, excerpt, tags, date, categories etc.
 *   Supports custom fields, custom taxonomies and comments
@@ -31,12 +31,12 @@ a CSV file and the plugin will take care of the rest.
 *   Multilanguage support
 
 
-== Screenshots ==
+## Screenshots 
 
 1.  Plugin's interface
 
 
-== Installation ==
+## Installation 
 
 Installing the plugin:
 
@@ -46,7 +46,7 @@ Installing the plugin:
     WordPress administration page.
 
 
-== Usage ==
+## Usage 
 
 Click on the CSV Importer link on your WordPress admin page, choose the
 file you would like to import and click Import. The `examples` directory
@@ -58,7 +58,7 @@ CSV is a tabular format that consists of rows and columns. Each row in
 a CSV file represents a post; each column identifies a piece of information
 that comprises a post.
 
-= Basic post information =
+### Basic post information 
 
 *   `csv_post_title` - title of the post
 *   `csv_post_post` - body of the post
@@ -88,12 +88,12 @@ that comprises a post.
 [custom_post_types]: http://codex.wordpress.org/Custom_Post_Types
 [strtotime]: http://php.net/manual/en/function.strtotime.php
 
-= Custom fields =
+### Custom fields 
 
 Any column that doesn't start with `csv_` is considered to be a custom field
 name. The data in that column will be imported as the custom fields value.
 
-= General remarks =
+### General remarks 
 
 *   WordPress pages [don't have categories or tags][pages].
 *   Most columns are optional. Either `csv_post_title`, `csv_post_post` or
@@ -106,7 +106,7 @@ name. The data in that column will be imported as the custom fields value.
 
 [pages]: http://codex.wordpress.org/Pages
 
-= Advanced usage =
+### Advanced usage 
 
 *   `csv_post_author` - numeric user id or login name. If not specified or
     user does not exist, the plugin will assign the posts to the user
@@ -114,7 +114,7 @@ name. The data in that column will be imported as the custom fields value.
 *   `csv_post_slug` - post slug used in permalinks.
 *   `csv_post_parent` - post parent id.
 
-== Custom taxonomies ==
+### Custom taxonomies 
 
 __New in version 0.3.0__
 
@@ -143,7 +143,7 @@ Make sure that the quotation marks used as text delimiters in `csv_ctax_`
 columns are regular ASCII double quotes, not typographical quotes like “
 (U+201C) and ” (U+201D).
 
-== Comments ==
+### Comments 
 
 __New in version 0.3.1__
 
@@ -154,7 +154,7 @@ a comment ID number. This ID doesn't go into WordPress. It is only there
 to have the connection information in the CSV file.
 
 
-== Frequently Asked Questions ==
+### Frequently Asked Questions 
 
 > I have quotation marks and commas as values in my CSV file. How do I tell CSV
 Importer to use a different separator?
@@ -231,8 +231,7 @@ on line 61`. What gives?
 This plugin requires PHP5, while you probably have PHP4 or older. Update your
 PHP installation or ask your hosting provider to do it for you.
 
-
-== Credits ==
+## Credits 
 
 This plugin uses [php-csv-parser][3] by Kazuyoshi Tlacaelel.
 It was inspired by JayBlogger's [CSV Import][4] plugin.
@@ -249,7 +248,7 @@ Contributors:
 [4]: http://www.jayblogger.com/the-birth-of-my-first-plugin-import-csv/
 
 
-== Changelog ==
+## Changelog 
 
 = 0.3.7 =
 *   Make hierarchical custom taxonomy line splitting more robust
