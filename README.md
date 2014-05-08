@@ -1,13 +1,16 @@
 ## CSV Importer
 
 **Contributors:** 
-* dvkob      [Donation Link](https://www.paypal.com/us/cgi-bin/webscr?cmd=_flow&SESSION=Jpjzgf6-V-tEo_ghFCIGg0otoug-5bIap8eQqefwx8Z3M7LesZ-r1vyLJn8&dispatch=5885d80a13c0db1f8e263663d3faee8db315373d882600b51a5edf961ea39639)
-* bheadrick  [Donation Link](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RN6G3EE7DE7LU)
-* kostasx    [Donation Link](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9DHPMYW842TKE)
+* dvkob      [Donate](https://www.paypal.com/us/cgi-bin/webscr?cmd=_flow&SESSION=Jpjzgf6-V-tEo_ghFCIGg0otoug-5bIap8eQqefwx8Z3M7LesZ-r1vyLJn8&dispatch=5885d80a13c0db1f8e263663d3faee8db315373d882600b51a5edf961ea39639)
+* bheadrick  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RN6G3EE7DE7LU)
+* kostasx    [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9DHPMYW842TKE)
 
 **Tags:** csv, import, batch, spreadsheet, excel
+
 **Requires at least:** 2.0.2
+
 **Tested up to:** 3.2.1
+
 **Stable tag:** 0.3.6
 
 Import posts from CSV files into WordPress.
